@@ -9,6 +9,7 @@ import { Battle } from "./Battle";
 import { Scoreboard } from "./Scoreboard";
 import { Feed } from "./Feed";
 import { HowToPlay } from "./HowToPlay";
+import { ThemeToggle } from "./ThemeToggle";
 import type { RoomState } from "../api/types";
 
 export function GameScreen() {
@@ -55,6 +56,7 @@ export function GameScreen() {
         <button className="btn ghost" onClick={() => setShowHelp(true)}>
           ¿Cómo jugar?
         </button>
+        <ThemeToggle />
         <button className="btn ghost" onClick={clearSession}>
           Salir
         </button>

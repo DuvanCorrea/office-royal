@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useSession } from "../state/store";
 import { HowToPlay } from "./HowToPlay";
+import { ThemeToggle } from "./ThemeToggle";
 import type { RoomSummary } from "../api/types";
 
 export function JoinScreen() {
@@ -53,6 +54,9 @@ export function JoinScreen() {
 
   return (
     <div className="home">
+      <div className="home-topbar">
+        <ThemeToggle />
+      </div>
       <div className="home-card card">
         <div className="home-brand">
           Office <span>Wars</span> <span className="home-emoji">🎯</span>

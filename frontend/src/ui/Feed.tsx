@@ -20,7 +20,7 @@ export function Feed({ feed }: { feed: FeedView[] }) {
   }, [feed.length]);
 
   return (
-    <div className="feed card">
+    <div className="feed card" id="feed-panel">
       <div className="panel-title">Historial</div>
       <div className="feed-list">
         {feed.map((f) => (

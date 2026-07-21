@@ -62,7 +62,7 @@ export function OpponentBoard({
 }: {
   office: OpponentOffice;
   canShoot: boolean;
-  onShoot: (x: number, y: number) => void;
+  onShoot: (x: number, y: number, origin: { x: number; y: number }) => void;
 }) {
   const [pending, setPending] = useState<string | null>(null);
   const revealedByCell = new Map(office.revealed.map((r) => [`${r.x},${r.y}`, r]));
@@ -86,9 +86,10 @@ export function OpponentBoard({
             key={key}
             className={`cell hidden ${canShoot ? "shootable" : ""} ${isPending ? "pending" : ""}`}
             disabled={!canShoot}
-            onClick={() => {
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
               setPending(key);
-              onShoot(x, y);
+              onShoot(x, y, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
             }}
           >
             {isPending ? "◎" : ""}
