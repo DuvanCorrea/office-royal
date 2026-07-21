@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/api/client.ts","./src/api/types.ts","./src/api/ws.ts","./src/app/app.tsx","./src/game/buildingscene.ts","./src/game/phasergame.tsx","./src/state/store.ts","./src/ui/feed.tsx","./src/ui/gamescreen.tsx","./src/ui/hud.tsx","./src/ui/joinscreen.tsx"],"errors":true,"version":"5.9.3"}

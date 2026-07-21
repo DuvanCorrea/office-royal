@@ -1,0 +1,21 @@
+# Java / Gradle
+backend/.gradle/
+backend/build/
+backend/bin/
+*.class
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env
+.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
