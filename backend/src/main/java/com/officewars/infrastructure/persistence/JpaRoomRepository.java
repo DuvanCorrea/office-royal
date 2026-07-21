@@ -42,8 +42,15 @@ public class JpaRoomRepository implements RoomRepository {
     public List<Room> findListedWaiting() {
         return jpa.findAll().stream()
                 .map(e -> deserialize(e.getData()))
-                .filter(r -> r.isListed() && r.getStatus() == RoomStatus.WAITING)
+                // Solo salas públicas en espera y con alguien dentro (nada de servidores vacíos).
+                .filter(r -> r.isListed() && r.getStatus() == RoomStatus.WAITING
+                        && !r.getPlayers().isEmpty())
                 .toList();
+    }
+
+    @Override
+    public void delete(String code) {
+        jpa.deleteById(code);
     }
 
     private String serialize(Room room) {

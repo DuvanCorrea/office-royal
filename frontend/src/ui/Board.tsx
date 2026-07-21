@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { OpponentOffice, OwnOffice, ShotOutcome } from "../api/types";
-import { objectEmoji } from "../game/objects";
+import { objectEmoji, objectLabel } from "../game/objects";
 
 function outcomeMark(outcome: ShotOutcome, objectType: string | null): string {
   switch (outcome) {
@@ -17,8 +17,33 @@ function outcomeMark(outcome: ShotOutcome, objectType: string | null): string {
   }
 }
 
+/** Texto del tooltip: qué pasó en la celda y quién lo hizo. */
+function tipFor(outcome: ShotOutcome, objectType: string | null, who: string): string {
+  const obj = objectType ? objectLabel(objectType) : "";
+  switch (outcome) {
+    case "MISS":
+      return `${who} disparó aquí — agua`;
+    case "OBJECT_HIT":
+      return `${who} dañó ${obj}`;
+    case "OBJECT_DESTROYED":
+      return `${who} destruyó ${obj}`;
+    case "AVATAR_HIT":
+      return `${who} golpeó al avatar aquí`;
+    case "AVATAR_ELIMINATED":
+      return `${who} eliminó al jugador aquí`;
+  }
+}
+
 /** Tu oficina, totalmente visible: avatar, objetos y los disparos recibidos. */
-export function OwnBoard({ office, color }: { office: OwnOffice; color: string }) {
+export function OwnBoard({
+  office,
+  color,
+  nameOf,
+}: {
+  office: OwnOffice;
+  color: string;
+  nameOf: (id: string | null) => string;
+}) {
   const objByCell = new Map(office.objects.map((o) => [`${o.x},${o.y}`, o]));
   const shotByCell = new Map(office.shots.map((s) => [`${s.x},${s.y}`, s]));
 
@@ -29,8 +54,9 @@ export function OwnBoard({ office, color }: { office: OwnOffice; color: string }
       const isAvatar = office.avatar?.x === x && office.avatar?.y === y;
       const obj = objByCell.get(key);
       const shot = shotByCell.get(key);
+      const tip = shot ? tipFor(shot.outcome, shot.objectType ?? obj?.type ?? null, nameOf(shot.byPlayerId)) : undefined;
       cells.push(
-        <div key={key} className={`cell ${shot ? "cell-shot" : ""}`}>
+        <div key={key} className={`cell ${shot ? "cell-shot" : ""}`} data-tip={tip}>
           {isAvatar && (
             <span className="avatar-chip" style={{ background: color }}>
               🧑
@@ -59,10 +85,12 @@ export function OpponentBoard({
   office,
   canShoot,
   onShoot,
+  nameOf,
 }: {
   office: OpponentOffice;
   canShoot: boolean;
   onShoot: (x: number, y: number, origin: { x: number; y: number }) => void;
+  nameOf: (id: string | null) => string;
 }) {
   const [pending, setPending] = useState<string | null>(null);
   const revealedByCell = new Map(office.revealed.map((r) => [`${r.x},${r.y}`, r]));
@@ -75,7 +103,11 @@ export function OpponentBoard({
       if (r) {
         const hit = r.outcome !== "MISS";
         cells.push(
-          <div key={key} className={`cell revealed ${hit ? "hit" : "miss"} pop`}>
+          <div
+            key={key}
+            className={`cell revealed ${hit ? "hit" : "miss"} pop`}
+            data-tip={tipFor(r.outcome, r.objectType, nameOf(r.byPlayerId))}
+          >
             <span className="piece">{outcomeMark(r.outcome, r.objectType)}</span>
           </div>
         );
@@ -87,9 +119,9 @@ export function OpponentBoard({
             className={`cell hidden ${canShoot ? "shootable" : ""} ${isPending ? "pending" : ""}`}
             disabled={!canShoot}
             onClick={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
+              const rect = e.currentTarget.getBoundingClientRect();
               setPending(key);
-              onShoot(x, y, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+              onShoot(x, y, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
             }}
           >
             {isPending ? "◎" : ""}

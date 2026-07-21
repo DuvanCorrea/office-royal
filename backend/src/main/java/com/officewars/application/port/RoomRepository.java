@@ -14,6 +14,9 @@ public interface RoomRepository {
 
     boolean existsByCode(String code);
 
-    /** Salas públicas en espera (WAITING) para la lista de servidores. */
+    /** Salas públicas en espera (WAITING) y con jugadores, para la lista de servidores. */
     List<Room> findListedWaiting();
+
+    /** Elimina la sala (p. ej. cuando se queda sin jugadores). */
+    void delete(String code);
 }

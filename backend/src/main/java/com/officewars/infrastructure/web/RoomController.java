@@ -5,6 +5,7 @@ import com.officewars.application.usecase.AutoArrangeUseCase;
 import com.officewars.application.usecase.CreateRoomUseCase;
 import com.officewars.application.usecase.GetRoomStateUseCase;
 import com.officewars.application.usecase.JoinRoomUseCase;
+import com.officewars.application.usecase.LeaveRoomUseCase;
 import com.officewars.application.usecase.ListOpenRoomsUseCase;
 import com.officewars.application.usecase.SetReadyUseCase;
 import com.officewars.application.usecase.StartGameUseCase;
@@ -42,13 +43,15 @@ public class RoomController {
     private final TakeShotUseCase takeShot;
     private final GetRoomStateUseCase getState;
     private final ListOpenRoomsUseCase listRooms;
+    private final LeaveRoomUseCase leaveRoom;
     private final RoomStateMapper mapper;
 
     public RoomController(CreateRoomUseCase createRoom, JoinRoomUseCase joinRoom,
                           StartGameUseCase startGame, ArrangeOfficeUseCase arrangeOffice,
                           AutoArrangeUseCase autoArrange, SetReadyUseCase setReady,
                           TakeShotUseCase takeShot, GetRoomStateUseCase getState,
-                          ListOpenRoomsUseCase listRooms, RoomStateMapper mapper) {
+                          ListOpenRoomsUseCase listRooms, LeaveRoomUseCase leaveRoom,
+                          RoomStateMapper mapper) {
         this.createRoom = createRoom;
         this.joinRoom = joinRoom;
         this.startGame = startGame;
@@ -58,6 +61,7 @@ public class RoomController {
         this.takeShot = takeShot;
         this.getState = getState;
         this.listRooms = listRooms;
+        this.leaveRoom = leaveRoom;
         this.mapper = mapper;
     }
 
@@ -117,6 +121,11 @@ public class RoomController {
         takeShot.execute(code, req.playerId(), req.targetId(), req.x(), req.y());
         Room room = getState.execute(code);
         return mapper.toState(room, req.playerId());
+    }
+
+    @PostMapping("/{code}/leave")
+    public void leave(@PathVariable String code, @RequestParam String playerId) {
+        leaveRoom.execute(code, playerId);
     }
 
     @GetMapping("/{code}/state")

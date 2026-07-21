@@ -108,6 +108,23 @@ class OfficeWarsModeTest {
     }
 
     @Test
+    void avatarNeverEscapesToAnAlreadyShotCell() {
+        Player shooter = player("A", 3);
+        Player target = player("B", 99); // muchas vidas para golpearlo muchas veces
+        target.getOffice().setAvatar(new Coordinate(0, 0));
+        Room room = roomWith(shooter, target);
+
+        // Golpea repetidamente: tras cada impacto el avatar huye; nunca debe caer en una celda
+        // ya disparada (si lo hiciera, sería imposible volver a alcanzarlo).
+        for (int i = 0; i < 30; i++) {
+            Coordinate pos = target.getOffice().getAvatar();
+            assertFalse(target.getOffice().alreadyShot(pos.x(), pos.y()),
+                    "el avatar quedó en una celda ya atacada: " + pos);
+            mode.resolveShot(room, shooter, target, pos.x(), pos.y());
+        }
+    }
+
+    @Test
     void lastLifeEliminatesTargetAndFinishesGame() {
         Player winner = player("A", 3);
         Player loser = player("B", 1);

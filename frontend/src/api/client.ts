@@ -54,6 +54,9 @@ export const api = {
       body: JSON.stringify({ playerId, targetId, x, y }),
     }),
 
+  leave: (code: string, playerId: string) =>
+    fetch(`/api/rooms/${code}/leave?playerId=${playerId}`, { method: "POST" }).catch(() => {}),
+
   getState: (code: string, playerId: string) =>
     request<RoomState>(`/api/rooms/${code}/state?playerId=${playerId}`),
 };

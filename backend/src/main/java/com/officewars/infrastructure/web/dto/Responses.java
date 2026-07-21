@@ -37,7 +37,7 @@ public final class Responses {
     }
 
     /** Celda revelada en la oficina de un rival (solo lo que ya se disparó). */
-    public record RevealedCell(int x, int y, String outcome, String objectType) {
+    public record RevealedCell(int x, int y, String outcome, String objectType, String byPlayerId) {
     }
 
     public record OpponentOffice(int width, int height, List<RevealedCell> revealed) {

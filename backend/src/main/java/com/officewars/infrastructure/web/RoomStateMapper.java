@@ -73,7 +73,7 @@ public class RoomStateMapper {
     private OpponentView toOpponentView(Player p) {
         Office office = p.getOffice();
         List<RevealedCell> revealed = office == null ? List.of() : office.getShots().stream()
-                .map(s -> new RevealedCell(s.x(), s.y(), s.outcome(), s.objectType()))
+                .map(s -> new RevealedCell(s.x(), s.y(), s.outcome(), s.objectType(), s.byPlayerId()))
                 .toList();
         int w = office == null ? 0 : office.getWidth();
         int h = office == null ? 0 : office.getHeight();

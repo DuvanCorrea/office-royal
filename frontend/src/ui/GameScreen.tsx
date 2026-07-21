@@ -57,7 +57,13 @@ export function GameScreen() {
           ¿Cómo jugar?
         </button>
         <ThemeToggle />
-        <button className="btn ghost" onClick={clearSession}>
+        <button
+          className="btn ghost"
+          onClick={async () => {
+            await api.leave(code, playerId); // libera la sala (se borra si queda vacía)
+            clearSession();
+          }}
+        >
           Salir
         </button>
       </header>

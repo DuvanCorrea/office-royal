@@ -8,6 +8,7 @@ import com.officewars.domain.core.Player;
 import com.officewars.domain.core.Room;
 import com.officewars.domain.core.Shot;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -69,6 +70,32 @@ public class OfficeWarsMode implements GameMode {
         return new Coordinate(0, 0);
     }
 
+    /**
+     * Celda a la que huye el avatar tras un impacto: libre y <b>que aún no haya sido disparada</b>,
+     * para que siga siendo alcanzable (si se escondiera en una celda ya atacada sería inmortal).
+     */
+    private Coordinate escapeCell(Office office) {
+        List<Coordinate> fresh = new ArrayList<>();
+        List<Coordinate> free = new ArrayList<>();
+        for (int y = 0; y < office.getHeight(); y++) {
+            for (int x = 0; x < office.getWidth(); x++) {
+                if (office.occupied(x, y)) {
+                    continue;
+                }
+                Coordinate c = new Coordinate(x, y);
+                free.add(c);
+                if (!office.alreadyShot(x, y)) {
+                    fresh.add(c);
+                }
+            }
+        }
+        List<Coordinate> pool = !fresh.isEmpty() ? fresh : free;
+        if (pool.isEmpty()) {
+            return office.getAvatar();
+        }
+        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+    }
+
     @Override
     public ShotResult resolveShot(Room room, Player shooter, Player target, int x, int y) {
         Office office = target.getOffice();
@@ -82,8 +109,10 @@ public class OfficeWarsMode implements GameMode {
                 return new ShotResult(ShotOutcome.AVATAR_ELIMINATED, target.getId(), null, ELIMINATION_BONUS,
                         shooter.getNickname() + " encontró y eliminó a " + target.getNickname() + " 🎯");
             }
-            office.setAvatar(freeCell(office)); // el avatar huye dentro de su oficina
+            // Se registra el disparo ANTES de huir, para que la celda recién atacada
+            // también quede excluida como escondite.
             office.getShots().add(new Shot(x, y, shooter.getId(), ShotOutcome.AVATAR_HIT.name(), null));
+            office.setAvatar(escapeCell(office)); // huye a una celda libre y aún no disparada
             return new ShotResult(ShotOutcome.AVATAR_HIT, target.getId(), null, 0,
                     shooter.getNickname() + " golpeó a " + target.getNickname()
                             + " (le quedan " + target.getLives() + " vidas)");

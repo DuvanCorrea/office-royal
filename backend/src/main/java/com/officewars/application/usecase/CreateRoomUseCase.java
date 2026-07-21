@@ -27,8 +27,10 @@ public class CreateRoomUseCase {
         String resolvedModeId = (modeId == null || modeId.isBlank()) ? modes.defaultModeId() : modeId;
         GameMode mode = modes.get(resolvedModeId);
 
-        String roomName = (name == null || name.isBlank()) ? "Sala " + mode.displayName() : name.trim();
-        Room room = new Room(generateUniqueCode(), roomName, resolvedModeId,
+        // El nombre por defecto lleva el código para poder distinguir varias salas en la lista.
+        String code = generateUniqueCode();
+        String roomName = (name == null || name.isBlank()) ? "Sala " + code : name.trim();
+        Room room = new Room(code, roomName, resolvedModeId,
                 GameDefaults.MAX_PLAYERS, mode.officeWidth(), mode.officeHeight());
         room.setListed(listed == null || listed);
         room.addFeed("SYSTEM", "Sala creada. ¡Compartan el código para unirse!");

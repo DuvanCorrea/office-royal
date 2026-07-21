@@ -53,6 +53,7 @@ export interface RevealedCell {
   y: number;
   outcome: ShotOutcome;
   objectType: string | null;
+  byPlayerId: string | null;
 }
 
 export interface OpponentOffice {

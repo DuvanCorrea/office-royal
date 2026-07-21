@@ -51,6 +51,9 @@ export function Battle({ state, code, playerId, applyState }: Props) {
     }
   }
 
+  const nameOf = (id: string | null) =>
+    state.players.find((p) => p.id === id)?.nickname ?? "Alguien";
+
   const winner = state.winnerId ? state.players.find((p) => p.id === state.winnerId) : null;
   const currentName = state.players.find((p) => p.id === state.currentPlayerId)?.nickname;
 
@@ -70,7 +73,9 @@ export function Battle({ state, code, playerId, applyState }: Props) {
             </span>
             Tu oficina
           </div>
-          {state.yourOffice && <OwnBoard office={state.yourOffice} color={you?.color ?? "#888"} />}
+          {state.yourOffice && (
+            <OwnBoard office={state.yourOffice} color={you?.color ?? "#888"} nameOf={nameOf} />
+          )}
         </div>
 
         <div className="board-col">
@@ -90,7 +95,12 @@ export function Battle({ state, code, playerId, applyState }: Props) {
             ))}
           </div>
           {target ? (
-            <OpponentBoard office={target.office} canShoot={canShoot} onShoot={shoot} />
+            <OpponentBoard
+              office={target.office}
+              canShoot={canShoot}
+              onShoot={shoot}
+              nameOf={nameOf}
+            />
           ) : (
             <div className="board-empty">No quedan rivales</div>
           )}
