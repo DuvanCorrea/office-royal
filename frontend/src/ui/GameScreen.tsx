@@ -69,6 +69,9 @@ export function GameScreen() {
           onClick={async () => {
             await api.leave(code, playerId); // libera la sala (se borra si queda vacía)
             clearSession();
+            // Recarga completa en vez de dejar que React/Three.js desmonten la escena en
+            // caliente: así no depende de que la limpieza del canvas 3D salga perfecta.
+            window.location.reload();
           }}
         >
           Salir

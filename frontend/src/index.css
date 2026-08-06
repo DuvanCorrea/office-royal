@@ -754,6 +754,9 @@ input:focus {
 .win-modal {
   text-align: center;
 }
+.win-modal .btn {
+  margin-top: 14px;
+}
 .win-emoji {
   font-size: 60px;
   animation: bob 1.4s ease-in-out infinite;

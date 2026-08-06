@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { BoardScene, type ShotEffectRequest } from "../three/BoardScene";
 import { ShotFly, type Fly } from "./ShotFly";
 import { useTurnAlert } from "./useTurnAlert";
+import { useSession } from "../state/store";
 import type { RoomState } from "../api/types";
 
 interface Props {
@@ -17,8 +18,19 @@ export function Battle({ state, code, playerId, applyState }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [flies, setFlies] = useState<Fly[]>([]);
   const [shotEffect, setShotEffect] = useState<ShotEffectRequest | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const flyId = useRef(0);
   const shotSeq = useRef(0);
+  const clearSession = useSession((s) => s.clearSession);
+
+  async function playAgain() {
+    setLeaving(true);
+    await api.leave(code, playerId);
+    clearSession();
+    // Recarga completa: evita depender de que React/Three.js desmonten la escena 3D en
+    // caliente sin errores (ver historial de bugs al salir de una partida terminada).
+    window.location.reload();
+  }
 
   const you = state.players.find((p) => p.id === playerId);
 
@@ -100,6 +112,9 @@ export function Battle({ state, code, playerId, applyState }: Props) {
             <div className="win-emoji">{winner?.id === playerId ? "🏆" : "🎮"}</div>
             <h2>{winner ? `${winner.nickname} ganó` : "Fin de la partida"}</h2>
             {winner?.id === playerId ? <p>¡Felicidades, sobreviviste!</p> : <p>¡Buena partida!</p>}
+            <button className="btn primary big" disabled={leaving} onClick={playAgain}>
+              {leaving ? "Saliendo…" : "🔁 Jugar de nuevo"}
+            </button>
           </div>
         </div>
       )}
