@@ -46,11 +46,21 @@ $Port = 5173
 $RuleName = "Office Wars $Port"
 
 function Get-ActiveProfiles {
-    $categories = Get-NetConnectionProfile | Select-Object -ExpandProperty NetworkCategory
-    if (-not $IncludePublic) {
-        $categories = $categories | Where-Object { $_ -ne "Public" }
+    # Get-NetConnectionProfile devuelve NetworkCategory: Public, Private o DomainAuthenticated.
+    # El parametro -Profile de New-NetFirewallRule/Set-NetFirewallRule usa un enum DISTINTO:
+    # Any, Domain, Private, Public, NotApplicable. "DomainAuthenticated" no es un valor valido
+    # ahi, hay que traducirlo a "Domain".
+    $map = @{
+        "Public"               = "Public"
+        "Private"               = "Private"
+        "DomainAuthenticated"  = "Domain"
     }
-    return $categories | Select-Object -Unique
+    $categories = Get-NetConnectionProfile | Select-Object -ExpandProperty NetworkCategory
+    $profiles = $categories | ForEach-Object { $map[[string]$_] } | Where-Object { $_ }
+    if (-not $IncludePublic) {
+        $profiles = $profiles | Where-Object { $_ -ne "Public" }
+    }
+    return $profiles | Select-Object -Unique
 }
 
 function Show-Status {
