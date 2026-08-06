@@ -36,6 +36,13 @@ export function GameScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, playerId]);
 
+  // Late de vida mientras la pestaña esté en esta sala, para que el backend no nos marque
+  // inactivos y nos saque de la sala (ver CleanupStalePlayersUseCase en el backend).
+  useEffect(() => {
+    const interval = setInterval(() => api.heartbeat(code, playerId), 60_000);
+    return () => clearInterval(interval);
+  }, [code, playerId]);
+
   if (!state) return <div className="loading">Cargando sala…</div>;
 
   const showSidebar = state.status === "RUNNING" || state.status === "FINISHED";

@@ -49,6 +49,13 @@ public class JpaRoomRepository implements RoomRepository {
     }
 
     @Override
+    public List<Room> findAll() {
+        return jpa.findAll().stream()
+                .map(e -> deserialize(e.getData()))
+                .toList();
+    }
+
+    @Override
     public void delete(String code) {
         jpa.deleteById(code);
     }

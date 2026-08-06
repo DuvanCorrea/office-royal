@@ -37,6 +37,7 @@ public class SetReadyUseCase {
         }
 
         player.setReady(true);
+        player.touch();
         room.addFeed("READY", player.getNickname() + " está listo");
 
         if (room.allReady()) {

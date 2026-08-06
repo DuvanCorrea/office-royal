@@ -14,22 +14,23 @@ const ICON: Record<string, string> = {
 };
 
 export function Feed({ feed }: { feed: FeedView[] }) {
-  const endRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const newestFirst = [...feed].reverse();
+
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [feed.length]);
 
   return (
     <div className="feed card" id="feed-panel">
       <div className="panel-title">Historial</div>
-      <div className="feed-list">
-        {feed.map((f) => (
+      <div className="feed-list" ref={listRef}>
+        {newestFirst.map((f) => (
           <div key={f.seq} className={`feed-item type-${f.type.toLowerCase()}`}>
             <span>{ICON[f.type] ?? "•"}</span>
             <span>{f.message}</span>
           </div>
         ))}
-        <div ref={endRef} />
       </div>
     </div>
   );

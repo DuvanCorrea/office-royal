@@ -16,10 +16,6 @@
   --neutral-d: #cbd1e6;
   --shadow: 0 10px 28px rgba(49, 46, 129, 0.12);
   --cell: #e9edfb;
-  --cell-hidden: #dbe0f3;
-  --cell-hover: #cdd6ff;
-  --reveal-miss: #d7e9ff;
-  --reveal-hit: #ffdfe0;
   --radius: 18px;
 }
 :root[data-theme="dark"] {
@@ -40,10 +36,6 @@
   --neutral-d: #26333a;
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
   --cell: #2b3b44;
-  --cell-hidden: #22323a;
-  --cell-hover: #33474f;
-  --reveal-miss: #143a4d;
-  --reveal-hit: #4a2230;
 }
 
 * {
@@ -126,7 +118,6 @@ button {
     transform: none;
   }
 }
-
 .card {
   background: var(--card);
   border: 2px solid var(--line);
@@ -425,7 +416,7 @@ input:focus {
   color: var(--muted);
 }
 
-/* ---------- Tablero ---------- */
+/* ---------- Tablero (usado hoy solo por Preparación; la batalla vive en three/) ---------- */
 .board {
   display: grid;
   gap: 4px;
@@ -445,33 +436,6 @@ input:focus {
 }
 .cell.drop:hover {
   outline: 2px dashed var(--secondary);
-}
-.cell.hidden {
-  background: var(--cell-hidden);
-  cursor: default;
-  color: var(--muted);
-  transition: transform 0.08s ease, background 0.12s ease;
-}
-.cell.hidden.shootable {
-  cursor: crosshair;
-}
-.cell.hidden.shootable:hover {
-  background: var(--cell-hover);
-  transform: scale(1.07);
-  box-shadow: inset 0 0 0 2px var(--secondary);
-}
-.cell.hidden.pending {
-  box-shadow: inset 0 0 0 2px var(--accent);
-  color: var(--accent);
-}
-.cell.revealed.miss {
-  background: var(--reveal-miss);
-}
-.cell.revealed.hit {
-  background: var(--reveal-hit);
-}
-.cell-shot {
-  outline: 2px solid rgba(229, 71, 75, 0.5);
 }
 /* Ficha de personaje: tamaño fijo por defecto (listas, cabeceras) para que no se deforme;
    dentro de una celda del tablero se adapta al tamaño de la celda. */
@@ -500,54 +464,12 @@ input:focus {
   height: 40px;
   font-size: 24px;
 }
-.avatar-chip.sm {
-  width: 22px;
-  height: 22px;
-  font-size: 13px;
-  display: inline-grid;
-  animation: none;
-}
 .piece {
   cursor: grab;
   line-height: 1;
 }
-.piece.destroyed {
-  filter: grayscale(1);
-  opacity: 0.4;
-}
-.shot-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: rgba(229, 71, 75, 0.85);
-  font-weight: 800;
-  pointer-events: none;
-}
 .pop {
   animation: pop 0.28s ease;
-}
-
-/* Tooltip: muestra qué pasó en la celda y quién lo hizo */
-.cell[data-tip]:hover {
-  z-index: 20;
-}
-.cell[data-tip]:hover::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  background: var(--ink);
-  color: var(--card);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 10px;
-  border-radius: 10px;
-  pointer-events: none;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-  animation: rise 0.14s ease both;
 }
 
 /* ---------- Lobby ---------- */
@@ -660,59 +582,29 @@ input:focus {
   color: #fff;
   animation: rise 0.3s ease both, pulse 1.7s ease-in-out infinite;
 }
-.boards {
-  display: flex;
-  gap: 28px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.board-col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.board-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-}
-.opp-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.opp-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.board3d-wrap {
+  width: 100%;
+  height: min(70vh, 640px);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card-2);
   border: 2px solid var(--line);
+  animation: rise 0.35s ease both;
+  display: flex;
+}
+.board3d-wrap canvas {
+  touch-action: none;
+}
+.board3d-label {
   background: var(--card);
+  border: 2px solid var(--line);
   color: var(--ink);
   border-radius: 999px;
-  padding: 5px 12px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 14px;
-}
-.opp-tab.active {
-  background: var(--card-2);
-}
-.opp-tab.dead {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.mini-lives {
-  font-size: 11px;
-}
-.board-empty {
-  width: min(52vmin, 440px);
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  color: var(--muted);
-  background: var(--cell);
-  border-radius: 14px;
+  padding: 3px 10px;
+  font-weight: 800;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
 }
 
 /* ---------- Scoreboard + Feed ---------- */

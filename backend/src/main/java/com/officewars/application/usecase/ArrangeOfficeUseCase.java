@@ -65,6 +65,7 @@ public class ArrangeOfficeUseCase {
         office.setAvatar(new Coordinate(avatarX, avatarY));
         office.setObjects(objects);
         player.setOffice(office);
+        player.touch();
 
         rooms.save(room);
         publisher.notifyRoomChanged(code);

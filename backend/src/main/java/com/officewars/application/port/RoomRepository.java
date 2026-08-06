@@ -17,6 +17,9 @@ public interface RoomRepository {
     /** Salas públicas en espera (WAITING) y con jugadores, para la lista de servidores. */
     List<Room> findListedWaiting();
 
+    /** Todas las salas, sin filtrar — usado por el barrido de limpieza de inactividad. */
+    List<Room> findAll();
+
     /** Elimina la sala (p. ej. cuando se queda sin jugadores). */
     void delete(String code);
 }

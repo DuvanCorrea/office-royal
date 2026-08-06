@@ -2,14 +2,19 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useSession } from "../state/store";
+import { usePreferences } from "../state/preferences";
 import { HowToPlay } from "./HowToPlay";
 import { ThemeToggle } from "./ThemeToggle";
 import type { RoomSummary } from "../api/types";
 
 export function JoinScreen() {
   const setSession = useSession((s) => s.setSession);
-  const [nickname, setNickname] = useState("");
-  const [code, setCode] = useState("");
+  const lastNickname = usePreferences((s) => s.lastNickname);
+  const lastRoomCode = usePreferences((s) => s.lastRoomCode);
+  const setLastNickname = usePreferences((s) => s.setLastNickname);
+  const setLastRoomCode = usePreferences((s) => s.setLastRoomCode);
+  const [nickname, setNickname] = useState(lastNickname);
+  const [code, setCode] = useState(lastRoomCode);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCode, setShowCode] = useState(false);
@@ -33,6 +38,8 @@ export function JoinScreen() {
         nickname: joined.nickname,
         color: joined.color,
       });
+      setLastNickname(nickname.trim());
+      setLastRoomCode(roomCode);
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);

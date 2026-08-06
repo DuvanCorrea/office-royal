@@ -53,6 +53,7 @@ public class TakeShotUseCase {
             throw new GameException("Ya disparaste a esa celda");
         }
 
+        shooter.touch();
         GameMode mode = modes.get(room.getModeId());
         ShotResult result = mode.resolveShot(room, shooter, target, x, y);
         room.addFeed(result.outcome().name(), result.message());

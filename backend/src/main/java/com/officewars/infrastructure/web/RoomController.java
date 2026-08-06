@@ -4,6 +4,7 @@ import com.officewars.application.usecase.ArrangeOfficeUseCase;
 import com.officewars.application.usecase.AutoArrangeUseCase;
 import com.officewars.application.usecase.CreateRoomUseCase;
 import com.officewars.application.usecase.GetRoomStateUseCase;
+import com.officewars.application.usecase.HeartbeatUseCase;
 import com.officewars.application.usecase.JoinRoomUseCase;
 import com.officewars.application.usecase.LeaveRoomUseCase;
 import com.officewars.application.usecase.ListOpenRoomsUseCase;
@@ -44,6 +45,7 @@ public class RoomController {
     private final GetRoomStateUseCase getState;
     private final ListOpenRoomsUseCase listRooms;
     private final LeaveRoomUseCase leaveRoom;
+    private final HeartbeatUseCase heartbeat;
     private final RoomStateMapper mapper;
 
     public RoomController(CreateRoomUseCase createRoom, JoinRoomUseCase joinRoom,
@@ -51,7 +53,7 @@ public class RoomController {
                           AutoArrangeUseCase autoArrange, SetReadyUseCase setReady,
                           TakeShotUseCase takeShot, GetRoomStateUseCase getState,
                           ListOpenRoomsUseCase listRooms, LeaveRoomUseCase leaveRoom,
-                          RoomStateMapper mapper) {
+                          HeartbeatUseCase heartbeat, RoomStateMapper mapper) {
         this.createRoom = createRoom;
         this.joinRoom = joinRoom;
         this.startGame = startGame;
@@ -62,6 +64,7 @@ public class RoomController {
         this.getState = getState;
         this.listRooms = listRooms;
         this.leaveRoom = leaveRoom;
+        this.heartbeat = heartbeat;
         this.mapper = mapper;
     }
 
@@ -126,6 +129,11 @@ public class RoomController {
     @PostMapping("/{code}/leave")
     public void leave(@PathVariable String code, @RequestParam String playerId) {
         leaveRoom.execute(code, playerId);
+    }
+
+    @PostMapping("/{code}/heartbeat")
+    public void heartbeat(@PathVariable String code, @RequestParam String playerId) {
+        heartbeat.execute(code, playerId);
     }
 
     @GetMapping("/{code}/state")

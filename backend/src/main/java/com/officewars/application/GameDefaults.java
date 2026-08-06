@@ -7,6 +7,11 @@ public final class GameDefaults {
     public static final int MAX_PLAYERS = 8;
     public static final int MIN_PLAYERS_TO_START = 2;
 
+    /** Salas en espera/preparación: se espera actividad activa, timeout corto. */
+    public static final long PREP_INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000L;
+    /** Partidas en curso: el juego es asíncrono por diseño ("vuelves horas después"). */
+    public static final long RUNNING_INACTIVITY_TIMEOUT_MS = 24 * 60 * 60 * 1000L;
+
     /** Paleta de colores de avatar asignados por orden de ingreso. */
     public static final String[] COLORS = {
             "#ef4444", "#f59e0b", "#22c55e", "#06b6d4",

@@ -2,6 +2,7 @@ package com.officewars.application.usecase;
 
 import com.officewars.application.port.GameEventPublisher;
 import com.officewars.application.port.RoomRepository;
+import com.officewars.application.usecase.support.RoomPlayerRemover;
 import com.officewars.domain.core.Player;
 import com.officewars.domain.core.Room;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,12 @@ public class LeaveRoomUseCase {
 
     private final RoomRepository rooms;
     private final GameEventPublisher publisher;
+    private final RoomPlayerRemover remover;
 
-    public LeaveRoomUseCase(RoomRepository rooms, GameEventPublisher publisher) {
+    public LeaveRoomUseCase(RoomRepository rooms, GameEventPublisher publisher, RoomPlayerRemover remover) {
         this.rooms = rooms;
         this.publisher = publisher;
+        this.remover = remover;
     }
 
     public void execute(String code, String playerId) {
@@ -34,21 +37,10 @@ public class LeaveRoomUseCase {
             return;
         }
 
-        room.getPlayers().remove(player.get());
-        room.getTurnOrder().remove(playerId);
         room.addFeed("LEAVE", player.get().getNickname() + " salió de la sala");
-
-        if (room.getPlayers().isEmpty()) {
-            rooms.delete(code);
+        boolean deleted = remover.removeAndReconcile(room, playerId, rooms);
+        if (deleted) {
             return;
-        }
-
-        // Si el que se fue tenía el turno, pasa al siguiente vivo.
-        if (playerId.equals(room.currentPlayerId())) {
-            room.advanceTurn();
-        }
-        if (room.getCurrentTurnIndex() >= room.getTurnOrder().size()) {
-            room.setCurrentTurnIndex(0);
         }
 
         rooms.save(room);

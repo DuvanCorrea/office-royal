@@ -35,6 +35,7 @@ public class AutoArrangeUseCase {
         Office office = new Office(room.getOfficeWidth(), room.getOfficeHeight());
         mode.autoArrange(office);
         player.setOffice(office);
+        player.touch();
 
         rooms.save(room);
         return room;

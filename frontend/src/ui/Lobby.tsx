@@ -33,7 +33,7 @@ export function Lobby({ state, code, playerId, applyState }: Props) {
       </p>
       <ul className="lobby-players">
         {state.players.map((p) => (
-          <li key={p.id}>
+          <li key={p.id} className="pop">
             <span className="avatar-chip" style={{ background: p.color }}>
               🧑
             </span>

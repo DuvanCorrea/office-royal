@@ -14,6 +14,7 @@ public class Player {
     private boolean ready;
     private PlayerStatus status = PlayerStatus.ALIVE;
     private Office office;
+    private long lastActivityAt;
 
     public Player() {
     }
@@ -24,10 +25,16 @@ public class Player {
         this.color = color;
         this.lives = lives;
         this.office = office;
+        this.lastActivityAt = System.currentTimeMillis();
     }
 
     public boolean isAlive() {
         return status == PlayerStatus.ALIVE;
+    }
+
+    /** Marca al jugador como visto ahora mismo (join, acción de juego o heartbeat). */
+    public void touch() {
+        this.lastActivityAt = System.currentTimeMillis();
     }
 
     /** Aplica un impacto al avatar: resta una vida y marca eliminación si llega a cero. */
@@ -106,5 +113,13 @@ public class Player {
 
     public void setOffice(Office office) {
         this.office = office;
+    }
+
+    public long getLastActivityAt() {
+        return lastActivityAt;
+    }
+
+    public void setLastActivityAt(long lastActivityAt) {
+        this.lastActivityAt = lastActivityAt;
     }
 }

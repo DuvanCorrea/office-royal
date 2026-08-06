@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { api } from "../api/client";
-import { OpponentBoard, OwnBoard } from "./Board";
+import { BoardScene, type ShotEffectRequest } from "../three/BoardScene";
 import { ShotFly, type Fly } from "./ShotFly";
+import { useTurnAlert } from "./useTurnAlert";
 import type { RoomState } from "../api/types";
 
 interface Props {
@@ -12,37 +13,47 @@ interface Props {
 }
 
 export function Battle({ state, code, playerId, applyState }: Props) {
-  const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flies, setFlies] = useState<Fly[]>([]);
+  const [shotEffect, setShotEffect] = useState<ShotEffectRequest | null>(null);
   const flyId = useRef(0);
+  const shotSeq = useRef(0);
 
   const you = state.players.find((p) => p.id === playerId);
-  const aliveOpponents = state.opponents.filter((o) => o.status === "ALIVE");
-  const selId =
-    selected && state.opponents.some((o) => o.id === selected && o.status === "ALIVE")
-      ? selected
-      : aliveOpponents[0]?.id ?? null;
-  const target = state.opponents.find((o) => o.id === selId) ?? null;
 
   const isYourTurn = state.status === "RUNNING" && state.currentPlayerId === playerId;
-  const canShoot = isYourTurn && !busy && !!target;
+  useTurnAlert(isYourTurn);
 
-  async function shoot(x: number, y: number, origin: { x: number; y: number }) {
-    if (!selId) return;
+  async function shoot(targetId: string, x: number, y: number, origin: { x: number; y: number }) {
     setBusy(true);
     setError(null);
     const maxSeq = state.feed.reduce((m, f) => Math.max(m, f.seq), 0);
     try {
-      const fresh = await api.shoot(code, playerId, selId, x, y);
+      const fresh = await api.shoot(code, playerId, targetId, x, y);
       applyState(fresh);
+
       // Toma el resultado de mi disparo (nueva entrada del feed) y lánzalo hacia el Historial.
       const newer = fresh.feed.filter((f) => f.seq > maxSeq);
       const entry = newer[newer.length - 1];
       if (entry) {
         const id = ++flyId.current;
         setFlies((fs) => [...fs, { id, message: entry.message, outcome: entry.type, from: origin }]);
+      }
+
+      // Dispara el arco/impacto 3D hacia la celda exacta que revelaste.
+      const revealed = fresh.opponents.find((o) => o.id === targetId)?.office.revealed.find(
+        (r) => r.x === x && r.y === y
+      );
+      if (revealed) {
+        setShotEffect({
+          seq: ++shotSeq.current,
+          targetId,
+          x,
+          y,
+          outcome: revealed.outcome,
+          objectType: revealed.objectType,
+        });
       }
     } catch (e) {
       setError((e as Error).message);
@@ -51,61 +62,31 @@ export function Battle({ state, code, playerId, applyState }: Props) {
     }
   }
 
-  const nameOf = (id: string | null) =>
-    state.players.find((p) => p.id === id)?.nickname ?? "Alguien";
-
   const winner = state.winnerId ? state.players.find((p) => p.id === state.winnerId) : null;
   const currentName = state.players.find((p) => p.id === state.currentPlayerId)?.nickname;
+
+  const opponentsWithShoot = state.opponents.map((o) => ({
+    ...o,
+    canShoot: isYourTurn && !busy && o.status === "ALIVE",
+  }));
 
   return (
     <div className="battle">
       {state.status === "RUNNING" && (
-        <div className={`turn-banner ${isYourTurn ? "your-turn" : ""}`}>
+        <div key={state.currentPlayerId} className={`turn-banner ${isYourTurn ? "your-turn" : ""}`}>
           {isYourTurn ? "🎯 ¡Es tu turno! Elige un rival y dispara" : `⏳ Turno de ${currentName}`}
         </div>
       )}
 
-      <div className="boards">
-        <div className="board-col">
-          <div className="board-head">
-            <span className="avatar-chip sm" style={{ background: you?.color }}>
-              🧑
-            </span>
-            Tu oficina
-          </div>
-          {state.yourOffice && (
-            <OwnBoard office={state.yourOffice} color={you?.color ?? "#888"} nameOf={nameOf} />
-          )}
-        </div>
-
-        <div className="board-col">
-          <div className="opp-tabs">
-            {state.opponents.map((o) => (
-              <button
-                key={o.id}
-                className={`opp-tab ${o.id === selId ? "active" : ""} ${o.status === "ELIMINATED" ? "dead" : ""}`}
-                disabled={o.status === "ELIMINATED"}
-                onClick={() => setSelected(o.id)}
-                style={{ borderColor: o.id === selId ? o.color : undefined }}
-              >
-                <span className="dot" style={{ background: o.color }} />
-                {o.nickname}
-                <span className="mini-lives">{"❤".repeat(o.lives) || "💀"}</span>
-              </button>
-            ))}
-          </div>
-          {target ? (
-            <OpponentBoard
-              office={target.office}
-              canShoot={canShoot}
-              onShoot={shoot}
-              nameOf={nameOf}
-            />
-          ) : (
-            <div className="board-empty">No quedan rivales</div>
-          )}
-        </div>
-      </div>
+      {state.yourOffice && (
+        <BoardScene
+          you={{ color: you?.color ?? "#888" }}
+          yourOffice={state.yourOffice}
+          opponents={opponentsWithShoot}
+          onShoot={shoot}
+          shotEffect={shotEffect}
+        />
+      )}
 
       {flies.map((f) => (
         <ShotFly key={f.id} fly={f} onDone={(id) => setFlies((fs) => fs.filter((x) => x.id !== id))} />
@@ -115,7 +96,7 @@ export function Battle({ state, code, playerId, applyState }: Props) {
 
       {state.status === "FINISHED" && (
         <div className="modal-backdrop">
-          <div className="modal card win-modal">
+          <div className="modal card win-modal pop">
             <div className="win-emoji">{winner?.id === playerId ? "🏆" : "🎮"}</div>
             <h2>{winner ? `${winner.nickname} ganó` : "Fin de la partida"}</h2>
             {winner?.id === playerId ? <p>¡Felicidades, sobreviviste!</p> : <p>¡Buena partida!</p>}
