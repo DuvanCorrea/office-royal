@@ -32,8 +32,15 @@ Luego abre **http://localhost:5173**.
 
 ## Jugar en tu red local (WiFi de casa u oficina)
 
-**No hay que instalar nada extra.** Docker ya publica el puerto en todas las interfaces y el
-frontend usa rutas relativas, así que funciona desde cualquier dispositivo de la misma red.
+**No hay que instalar nada extra.** Docker Desktop publica el puerto en todas las interfaces y
+el frontend usa rutas relativas, así que funciona desde cualquier dispositivo de la misma red.
+
+> **Si usas Podman en Windows en vez de Docker Desktop**, esto **no** es automático: Podman
+> corre dentro de WSL2 y el reenvío de puertos de WSL (`wslrelay.exe`) solo escucha en
+> `localhost` por defecto — el puerto ni siquiera es alcanzable por tu propia IP de red, no solo
+> desde otros equipos. Hace falta un paso extra (`netsh interface portproxy`) además del
+> firewall; `scripts\lan-access.ps1 -On` hace las dos cosas. Si `http://<tu-ip>:5173` no carga
+> **ni desde tu propio PC**, es justo este problema y no el firewall — revisa la sección de abajo.
 
 1. Averigua la IP local del PC que corre Docker:
    - Windows: `ipconfig` → "Dirección IPv4" de tu adaptador de red (ej. `10.67.0.202`).
@@ -67,7 +74,10 @@ frontend usa rutas relativas, así que funciona desde cualquier dispositivo de l
    > Nunca uses `Public`: son redes no confiables (cafés, aeropuertos).
 
    **Atajo:** `scripts/lan-access.ps1` hace justo esto — detecta el perfil de red activo solo
-   (nunca `Public`, salvo que uses `-IncludePublic`) y crea la regla para el perfil correcto.
+   (nunca `Public`, salvo que uses `-IncludePublic`) y crea la regla para el perfil correcto —
+   y con Podman, además crea el port proxy que hace falta (ver nota de arriba). Revisa que
+   diga que cada paso se aplicó de verdad: si no corres la PowerShell como administrador, los
+   comandos fallan con "Acceso denegado" y el script lo va a marcar en rojo (no como éxito).
    En PowerShell **como administrador**, desde la raíz del proyecto:
 
    ```powershell
