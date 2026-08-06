@@ -11,11 +11,15 @@
      (DomainAuthenticated se llama "Domain" ahi), asi que se traduce.
 
   2. Un "port proxy" (netsh interface portproxy) que reenvia trafico de 0.0.0.0:5173 hacia
-     127.0.0.1:5173. Esto hace falta porque Podman en Windows corre dentro de WSL2 y el
-     reenvio de puertos de WSL (wslrelay.exe) solo escucha en localhost por defecto — a
-     diferencia de Docker Desktop, que expone el puerto en todas las interfaces el solo. Sin
-     este paso, ni siquiera tu propio PC puede llegar al juego por su IP de red (solo por
-     localhost), y por supuesto tampoco otros equipos.
+     donde este escuchando wslrelay.exe en loopback. Esto hace falta porque Podman en Windows
+     corre dentro de WSL2 y el reenvio de puertos de WSL solo escucha en localhost por
+     defecto — a diferencia de Docker Desktop, que expone el puerto en todas las interfaces el
+     solo. Sin este paso, ni siquiera tu propio PC puede llegar al juego por su IP de red (solo
+     por localhost), y por supuesto tampoco otros equipos.
+
+     wslrelay a veces escucha en 127.0.0.1 (IPv4) y a veces solo en ::1 (IPv6) — cambia sin
+     que reinicies nada. El script detecta cual esta activo en cada corrida en vez de asumir
+     uno fijo; si detecta el otro la proxima vez, hay que volver a correr -On.
 
   Debe ejecutarse en una PowerShell como Administrador (clic derecho, "Ejecutar como
   administrador"). Si no detecta privilegios de administrador, no hace nada y avisa.
@@ -77,6 +81,16 @@ function Get-ActiveProfiles {
     return $profiles | Select-Object -Unique
 }
 
+function Get-LoopbackTarget {
+    # wslrelay a veces solo escucha en ::1 (IPv6) y a veces tambien en 127.0.0.1 (IPv4) — esto
+    # ha cambiado sin reiniciar nada, asi que se detecta en cada corrida en vez de asumir uno
+    # fijo. Prefiere IPv4 si ambos estan activos.
+    $listeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if ($listeners | Where-Object { $_.LocalAddress -eq "127.0.0.1" }) { return "127.0.0.1" }
+    if ($listeners | Where-Object { $_.LocalAddress -eq "::1" }) { return "::1" }
+    return $null
+}
+
 function Show-Status {
     $rule = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
     if ($rule) {
@@ -86,11 +100,18 @@ function Show-Status {
         Write-Host "Firewall: sin regla para el puerto $Port todavia." -ForegroundColor Yellow
     }
 
-    $proxy = netsh interface portproxy show v4tov4 | Select-String ":$Port\s"
+    $proxy = @(netsh interface portproxy show all) | Select-String ":$Port\s"
     if ($proxy) {
         Write-Host "Port proxy: activo -> $proxy" -ForegroundColor Cyan
     } else {
         Write-Host "Port proxy: no configurado (el puerto solo es alcanzable por localhost)." -ForegroundColor Yellow
+    }
+
+    $target = Get-LoopbackTarget
+    if ($target) {
+        Write-Host "Contenedor: escuchando en ${target}:$Port en este PC." -ForegroundColor Cyan
+    } else {
+        Write-Host "Contenedor: no se detecta nada escuchando en el puerto $Port. Corre 'podman compose up -d'." -ForegroundColor Yellow
     }
 }
 
@@ -111,8 +132,13 @@ if ($On) {
     }
     $profileList = $profiles -join ","
     try {
-        $existing = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
-        if ($existing) {
+        $existing = @(Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue)
+        if ($existing.Count -gt 1) {
+            # Corridas anteriores con fallos a medias pueden haber dejado reglas duplicadas.
+            $existing | Select-Object -Skip 1 | Remove-NetFirewallRule
+            $existing = @(Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue)
+        }
+        if ($existing.Count -gt 0) {
             Set-NetFirewallRule -DisplayName $RuleName -Enabled True -Profile $profileList -ErrorAction Stop
             Write-Host "Firewall: regla '$RuleName' habilitada para: $profileList" -ForegroundColor Green
         } else {
@@ -125,12 +151,21 @@ if ($On) {
         $ok = $false
     }
 
-    # 2) Port proxy (necesario en Podman/WSL2 - ver .DESCRIPTION)
+    # 2) Port proxy (necesario en Podman/WSL2 - ver .DESCRIPTION). Se detecta a donde reenviar
+    # en vez de asumir 127.0.0.1: wslrelay a veces solo escucha en ::1.
     try {
+        $target = Get-LoopbackTarget
+        if (-not $target) {
+            throw "no se detecta nada escuchando en el puerto $Port en este PC (ni 127.0.0.1 ni ::1) - corre 'podman compose up -d' primero"
+        }
+        # Limpia cualquier regla previa (v4tov4 o v4tov6) para este puerto antes de crear la correcta.
         netsh interface portproxy delete v4tov4 listenport=$Port listenaddress=0.0.0.0 | Out-Null
-        $addResult = netsh interface portproxy add v4tov4 listenport=$Port listenaddress=0.0.0.0 connectport=$Port connectaddress=127.0.0.1 2>&1
+        netsh interface portproxy delete v4tov6 listenport=$Port listenaddress=0.0.0.0 | Out-Null
+
+        $proxyType = if ($target -eq "::1") { "v4tov6" } else { "v4tov4" }
+        $addResult = netsh interface portproxy add $proxyType listenport=$Port listenaddress=0.0.0.0 connectport=$Port connectaddress=$target 2>&1
         if ($LASTEXITCODE -ne 0) { throw "netsh salio con codigo $LASTEXITCODE : $addResult" }
-        Write-Host "Port proxy: 0.0.0.0:$Port -> 127.0.0.1:$Port creado." -ForegroundColor Green
+        Write-Host "Port proxy: 0.0.0.0:$Port -> ${target}:$Port creado ($proxyType)." -ForegroundColor Green
     } catch {
         Write-Host "Port proxy: fallo al crearlo -> $($_.Exception.Message)" -ForegroundColor Red
         $ok = $false
@@ -170,8 +205,8 @@ if ($Off) {
     }
 
     try {
-        $deleteResult = netsh interface portproxy delete v4tov4 listenport=$Port listenaddress=0.0.0.0 2>&1
-        if ($LASTEXITCODE -ne 0) { throw "netsh salio con codigo $LASTEXITCODE : $deleteResult" }
+        netsh interface portproxy delete v4tov4 listenport=$Port listenaddress=0.0.0.0 | Out-Null
+        netsh interface portproxy delete v4tov6 listenport=$Port listenaddress=0.0.0.0 | Out-Null
         Write-Host "Port proxy: eliminado." -ForegroundColor Green
     } catch {
         Write-Host "Port proxy: fallo al eliminarlo -> $($_.Exception.Message)" -ForegroundColor Red
