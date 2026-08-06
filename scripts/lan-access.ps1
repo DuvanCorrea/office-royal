@@ -4,13 +4,13 @@
 
 .DESCRIPTION
   Crea (o reutiliza) una regla de firewall de entrada para el puerto 5173, detectando
-  automáticamente el perfil de red activo (Private, Public, DomainAuthenticated) en vez de
-  asumir "Private" a ciegas — ese es el error típico: crear la regla para "Private" cuando la
+  automaticamente el perfil de red activo (Private, Public, DomainAuthenticated) en vez de
+  asumir "Private" a ciegas. Ese es el error tipico: crear la regla para "Private" cuando la
   red real es "DomainAuthenticated" (redes de empresa), lo que deja la regla creada pero sin
-  efecto. Nunca crea la regla para el perfil "Public" (redes no confiables como cafés o
-  aeropuertos) salvo que se use -IncludePublic explícitamente.
+  efecto. Nunca crea la regla para el perfil "Public" (redes no confiables como cafes o
+  aeropuertos) salvo que se use -IncludePublic explicitamente.
 
-  Debe ejecutarse en una PowerShell como Administrador (clic derecho → "Ejecutar como
+  Debe ejecutarse en una PowerShell como Administrador (clic derecho, "Ejecutar como
   administrador"), igual que los comandos manuales documentados en el README.
 
 .PARAMETER On
@@ -23,7 +23,7 @@
   Junto con -Off, borra la regla de firewall por completo en vez de solo deshabilitarla.
 
 .PARAMETER IncludePublic
-  Permite incluir el perfil "Public" al habilitar. No recomendado — úsalo solo si sabes lo que
+  Permite incluir el perfil "Public" al habilitar. No recomendado, usalo solo si sabes lo que
   haces.
 
 .EXAMPLE
@@ -32,7 +32,7 @@
   .\scripts\lan-access.ps1 -Off
 .EXAMPLE
   .\scripts\lan-access.ps1
-  # Sin parámetros: solo muestra el estado actual, no cambia nada.
+  # Sin parametros: solo muestra el estado actual, no cambia nada.
 #>
 param(
     [switch]$On,
@@ -56,7 +56,7 @@ function Get-ActiveProfiles {
 function Show-Status {
     $rule = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
     if (-not $rule) {
-        Write-Host "Sin regla de firewall para el puerto $Port todavía. Usa -On para crearla." -ForegroundColor Yellow
+        Write-Host "Sin regla de firewall para el puerto $Port todavia. Usa -On para crearla." -ForegroundColor Yellow
         return
     }
     $state = if ($rule.Enabled -eq "True") { "HABILITADA" } else { "deshabilitada" }
@@ -66,7 +66,7 @@ function Show-Status {
 if ($On) {
     $profiles = Get-ActiveProfiles
     if (-not $profiles) {
-        Write-Host "No hay ningún perfil de red confiable activo (¿estás en una red 'Public'? usa -IncludePublic si de verdad quieres exponerlo ahí)." -ForegroundColor Red
+        Write-Host "No hay ningun perfil de red confiable activo (si estas en una red 'Public', usa -IncludePublic si de verdad quieres exponerlo ahi)." -ForegroundColor Red
         exit 1
     }
     $profileList = $profiles -join ","
@@ -74,7 +74,7 @@ if ($On) {
     $existing = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
     if ($existing) {
         Set-NetFirewallRule -DisplayName $RuleName -Enabled True -Profile $profileList
-        Write-Host "Regla '$RuleName' ya existía — habilitada para: $profileList" -ForegroundColor Green
+        Write-Host "Regla '$RuleName' ya existia, habilitada para: $profileList" -ForegroundColor Green
     } else {
         New-NetFirewallRule -DisplayName $RuleName -Direction Inbound -Protocol TCP `
             -LocalPort $Port -Action Allow -Profile $profileList | Out-Null
@@ -94,7 +94,7 @@ if ($On) {
 if ($Off) {
     $existing = Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue
     if (-not $existing) {
-        Write-Host "No había ninguna regla '$RuleName' que quitar." -ForegroundColor Yellow
+        Write-Host "No habia ninguna regla '$RuleName' que quitar." -ForegroundColor Yellow
         exit 0
     }
     if ($Remove) {
